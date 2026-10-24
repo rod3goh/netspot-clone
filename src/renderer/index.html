@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none';" />
+  <title>NetSpot Clone — Analisador Wi-Fi</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="dark">
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="i-radar" viewBox="0 0 24 24"><path d="M12 12 4.6 4.6A10 10 0 1 0 22 12h-4a6 6 0 1 1-2.2-4.7L12 12Z"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3h4v13H3Z"/><path d="M7 21v-8h5V7h5"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 5v6h-6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 24 24"><path d="m5 3 14 8-6 2-2 6-6-16Z"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V6a2 2 0 1 1 4 0v5-7a2 2 0 1 1 4 0v7-5a2 2 0 1 1 4 0v9a6 6 0 0 1-6 6h-2a6 6 0 0 1-5.2-3L4 13.8a2 2 0 0 1 3.4-2.1L8 13Z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-wall" viewBox="0 0 24 24"><path d="M3 6h18v12H3z"/><path d="M3 12h18M9 6v6M15 12v6"/></symbol>
+    <symbol id="i-door" viewBox="0 0 24 24"><path d="M5 21V3h11v18"/><path d="M16 21h3M9 21V3"/><circle cx="12.5" cy="12" r="1"/></symbol>
+    <symbol id="i-window" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M12 4v16M4 12h16"/></symbol>
+    <symbol id="i-router" viewBox="0 0 24 24"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 17h.01M11 17h.01M12 9V6M8.5 9.5a5 5 0 0 1 7 0M6 7a8 8 0 0 1 12 0"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21 12-12a2.8 2.8 0 0 0-4-4L3 17v4h4Z"/><path d="m11 7 6 6"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5"/><path d="M4 12h9a6 6 0 0 1 6 6v1"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 16v4h16v-4"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></symbol>
+    <symbol id="i-csv" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.5a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8.5 15.5a6 6 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Z"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 4h13l3 3v13H4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5M3 17l9 5 9-5"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><svg><use href="#i-radar"/></svg></div>
+      <div class="brand-text"><strong>NetSpot</strong><span>Clone</span></div>
+    </div>
+    <nav class="mode-tabs" id="modeTabs" aria-label="Modos">
+      <button data-mode="inspector" class="active"><svg><use href="#i-table"/></svg><span>Inspetor</span></button>
+      <button data-mode="survey"><svg><use href="#i-map"/></svg><span>Levantamento</span></button>
+      <button data-mode="planning"><svg><use href="#i-plan"/></svg><span>Planejamento</span></button>
+    </nav>
+    <div class="top-actions">
+      <span class="badge demo" id="demoBadge" hidden>Demonstração</span>
+      <div class="adapter-chip" id="adapterChip" title="Adaptador Wi-Fi">
+        <svg><use href="#i-wifi"/></svg>
+        <div><strong id="adapterName">Procurando adaptador…</strong><span id="adapterState">—</span></div>
+      </div>
+      <button class="btn icon-only" id="pauseBtn" title="Pausar varredura"><svg><use href="#i-pause"/></svg></button>
+      <button class="btn icon-only" id="refreshBtn" title="Escanear agora"><svg><use href="#i-refresh"/></svg></button>
+      <button class="btn icon-only" id="settingsBtn" title="Configurações"><svg><use href="#i-gear"/></svg></button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- ================= INSPECTOR ================= -->
+    <section class="view active" id="view-inspector">
+      <div class="inspector-toolbar">
+        <div class="search-box">
+          <svg><use href="#i-search"/></svg>
+          <input id="netSearch" type="search" placeholder="Filtrar por SSID, BSSID ou fornecedor…" autocomplete="off" />
+        </div>
+        <div class="chips" id="bandChips">
+          <button data-band="all" class="active">Todas</button>
+          <button data-band="2.4">2,4 GHz</button>
+          <button data-band="5">5 GHz</button>
+          <button data-band="6">6 GHz</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="scan-indicator" id="scanIndicator"><span class="dot"></span><span id="scanText">Varrendo…</span></div>
+      </div>
+
+      <div class="inspector-main">
+        <div class="card table-card">
+          <div class="table-scroll">
+            <table id="apTable">
+              <thead>
+                <tr>
+                  <th data-sort="ssid" class="sortable">SSID</th>
+                  <th data-sort="bssid" class="sortable">BSSID</th>
+                  <th data-sort="vendor" class="sortable">Fornecedor</th>
+                  <th data-sort="rssi" class="sortable num">Sinal</th>
+                  <th data-sort="channel" class="sortable">Canal</th>
+                  <th data-sort="band" class="sortable">Faixa</th>
+                  <th data-sort="width" class="sortable">Largura</th>
+                  <th data-sort="security" class="sortable">Segurança</th>
+                  <th data-sort="phy" class="sortable">PHY</th>
+                  <th class="spark-head">Últimos 60 s</th>
+                </tr>
+              </thead>
+              <tbody id="apTbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="tableEmpty" hidden>
+            <div class="empty-icon"><svg><use href="#i-wifi"/></svg></div>
+            <h3>Nenhuma rede encontrada</h3>
+            <p id="emptyMessage">Verifique se o adaptador Wi-Fi está habilitado.</p>
+            <div class="btn-row">
+              <button class="btn primary" id="emptyRetry">Tentar novamente</button>
+              <button class="btn" id="emptyDemo">Usar dados de demonstração</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="inspector-bottom">
+          <div class="card chart-card">
+            <div class="card-head">
+              <div class="seg" id="chartTabs">
+                <button data-chart="signal" class="active">Sinal no tempo</button>
+                <button data-chart="channels">Canais</button>
+              </div>
+              <div class="chart-extra" id="chartExtra">
+                <div class="seg small" id="channelBands">
+                  <button data-cband="2.4" class="active">2,4</button>
+                  <button data-cband="5">5</button>
+                  <button data-cband="6">6</button>
+                </div>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+          </div>
+
+          <aside class="card details-card" id="detailsCard">
+            <div class="details-placeholder" id="detailsPlaceholder">
+              <div class="empty-icon small"><svg><use href="#i-radar"/></svg></div>
+              <h3>Selecione uma rede</h3>
+              <p>Clique em uma linha da tabela para ver detalhes, histórico e qualidade do sinal.</p>
+            </div>
+            <div id="detailsContent" hidden>
+              <div class="details-head">
+                <div class="details-title">
+                  <h3 id="dSsid">—</h3>
+                  <span id="dBssid">—</span>
+                </div>
+                <div class="quality-pill" id="dQuality">—</div>
+              </div>
+              <div class="signal-hero">
+                <div class="signal-value"><span id="dRssi">—</span><small>dBm</small></div>
+                <div class="signal-meta">
+                  <div class="meter"><div id="dMeter" style="width:0%"></div></div>
+                  <div class="signal-sub"><span id="dPct">0%</span><span id="dQualityText">—</span></div>
+                </div>
+              </div>
+              <dl class="detail-grid">
+                <div><dt>Fornecedor</dt><dd id="dVendor">—</dd></div>
+                <div><dt>Canal / Frequência</dt><dd id="dChannel">—</dd></div>
+                <div><dt>Largura</dt><dd id="dWidth">—</dd></div>
+                <div><dt>Faixa</dt><dd id="dBand">—</dd></div>
+                <div><dt>Segurança</dt><dd id="dSecurity">—</dd></div>
+                <div><dt>PHY</dt><dd id="dPhy">—</dd></div>
+                <div><dt>Média / Máx / Mín</dt><dd id="dStats">—</dd></div>
+                <div><dt>Primeira / última vez</dt><dd id="dSeen">—</dd></div>
+                <div><dt>Taxa</dt><dd id="dRate">—</dd></div>
+                <div><dt>Amostras</dt><dd id="dSamples">—</dd></div>
+              </dl>
+              <div class="details-actions">
+                <button class="btn small" id="detailMeasure"><svg><use href="#i-pin"/></svg> Usar no levantamento</button>
+                <button class="btn small ghost" id="detailCopy">Copiar BSSID</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SURVEY ================= -->
+    <section class="view" id="view-survey">
+      <div class="map-layout">
+        <aside class="side-panel left">
+          <div class="panel-section">
+            <h3>Projeto</h3>
+            <input id="surveyProjectName" class="text-input" value="Novo levantamento" />
+            <div class="btn-row tight">
+              <button class="btn small" id="surveyNew"><svg><use href="#i-plus"/></svg>Novo</button>
+              <button class="btn small" id="surveySave"><svg><use href="#i-save"/></svg>Salvar</button>
+              <button class="btn small" id="surveyOpen"><svg><use href="#i-folder"/></svg>Abrir</button>
+            </div>
+          </div>
+          <div class="panel-section">
+            <h3>Planta baixa</h3>
+            <button class="btn full" id="surveyOpenMap"><svg><use href="#i-upload"/></svg> Carregar imagem</button>
+            <div class="inline-field">
+              <label for="surveyMapWidth">Largura real</label>
+              <div class="input-suffix"><input id="surveyMapWidth" type="number" min="1" step="0.5" value="20" /><span>m</span></div>
+            </div>
+            <button class="link-btn" id="surveySample">Carregar projeto de exemplo</button>
+          </div>
+          <div class="panel-section">
+            <h3>Ferramentas</h3>
+            <div class="tool-grid" id="surveyTools">
+              <button data-tool="measure" class="active" title="Medir sinal"><svg><use href="#i-pin"/></svg><span>Medir</span></button>
+              <button data-tool="select" title="Selecionar"><svg><use href="#i-cursor"/></svg><span>Selecionar</span></button>
+              <button data-tool="pan" title="Mover mapa"><svg><use href="#i-hand"/></svg><span>Mover</span></button>
+              <button data-tool="erase" title="Apagar"><svg><use href="#i-eraser"/></svg><span>Apagar</span></button>
+            </div>
+            <button class="btn small ghost full" id="surveyUndo"><svg><use href="#i-undo"/></svg>Desfazer</button>
+            <p class="hint" id="surveyHint">Clique no mapa para registrar o sinal do ponto. Role para dar zoom; arraste com o botão do meio para mover.</p>
+          </div>
+          <div class="panel-section grow">
+            <h3>Medições <span class="counter" id="surveyPointCount">0</span></h3>
+            <div class="list" id="surveyPointList"></div>
+          </div>
+        </aside>
+
+        <div class="map-stage">
+          <canvas id="surveyCanvas"></canvas>
+          <div class="map-overlay-top">
+            <span class="map-badge" id="surveyBadgePoints">0 pontos</span>
+            <span class="map-badge" id="surveyBadgeScale">—</span>
+            <span class="map-badge" id="surveyBadgeZoom">100%</span>
+          </div>
+          <div class="map-toolbar">
+            <button id="surveyZoomIn" title="Aproximar"><svg><use href="#i-plus"/></svg></button>
+            <button id="surveyZoomOut" title="Afastar"><svg><use href="#i-minus"/></svg></button>
+            <button id="surveyFit" title="Ajustar"><svg><use href="#i-fit"/></svg></button>
+          </div>
+          <div class="map-empty" id="surveyEmpty">
+            <div class="empty-icon"><svg><use href="#i-map"/></svg></div>
+            <h3>Carregue uma planta baixa</h3>
+            <p>Use uma imagem da planta para marcar os pontos de medição e gerar o mapa de calor do sinal.</p>
+            <div class="btn-row"><button class="btn primary" id="surveyEmptyMap">Carregar planta</button><button class="btn" id="surveyEmptySample">Ver exemplo</button></div>
+          </div>
+        </div>
+
+        <aside class="side-panel right">
+          <div class="panel-section">
+            <h3>Visualização</h3>
+            <div class="field">
+              <label for="surveyMetric">Métrica</label>
+              <select id="surveyMetric">
+                <option value="coverage">Melhor cobertura</option>
+                <option value="rssi">RSSI de uma rede</option>
+                <option value="count">Nº de redes (≥ limite)</option>
+                <option value="interference">Interferência</option>
+              </select>
+            </div>
+            <div id="surveyApSelectWrap" class="field" hidden>
+              <label for="surveyApSelect">Rede</label>
+              <select id="surveyApSelect"></select>
+            </div>
+            <div class="range-row">
+              <div class="field"><label for="surveyMin">Mín.</label><input id="surveyMin" type="number" value="-90" /></div>
+              <div class="field"><label for="surveyMax">Máx.</label><input id="surveyMax" type="number" value="-30" /></div>
+            </div>
+            <div class="field" id="surveyCountThresholdWrap" hidden>
+              <label for="surveyThreshold">Limite de sinal (dBm)</label>
+              <input id="surveyThreshold" type="number" value="-75" />
+            </div>
+            <div class="field">
+              <label for="surveySmooth">Suavização <span class="muted" id="surveySmoothVal">2</span></label>
+              <input id="surveySmooth" type="range" min="0" max="5" step="1" value="2" />
+            </div>
+            <div class="toggle-list">
+              <label><input type="checkbox" id="surveyIsolines" /> Isolinhas</label>
+              <label><input type="checkbox" id="surveyShowPoints" checked /> Pontos de medição</label>
+              <label><input type="checkbox" id="surveyShowPath" checked /> Trajeto</label>
+              <label><input type="checkbox" id="surveyShowAps" checked /> Rótulos das redes</label>
+            </div>
+          </div>
+          <div class="panel-section">
+            <h3>Redes no projeto</h3>
+            <div class="ap-list" id="surveyApList"></div>
+          </div>
+          <div class="panel-section">
+            <h3>Legenda</h3>
+            <div class="legend" id="surveyLegend">
+              <div class="legend-bar"></div>
+              <div class="legend-labels"><span id="surveyLegendMin">—</span><span id="surveyLegendMid">—</span><span id="surveyLegendMax">—</span></div>
+            </div>
+            <p class="hint" id="surveyStats">Sem medições.</p>
+          </div>
+          <div class="panel-section">
+            <h3>Exportar</h3>
+            <div class="btn-row wrap tight">
+              <button class="btn small" id="surveyExportCsv"><svg><use href="#i-csv"/></svg>CSV</button>
+              <button class="btn small" id="surveyExportPng"><svg><use href="#i-image"/></svg>PNG</button>
+              <button class="btn small" id="surveyExportPdf"><svg><use href="#i-pdf"/></svg>PDF</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= PLANNING ================= -->
+    <section class="view" id="view-planning">
+      <div class="map-layout">
+        <aside class="side-panel left">
+          <div class="panel-section">
+            <h3>Projeto</h3>
+            <input id="planProjectName" class="text-input" value="Novo planejamento" />
+            <div class="btn-row tight">
+              <button class="btn small" id="planNew"><svg><use href="#i-plus"/></svg>Novo</button>
+              <button class="btn small" id="planSave"><svg><use href="#i-save"/></svg>Salvar</button>
+              <button class="btn small" id="planOpen"><svg><use href="#i-folder"/></svg>Abrir</button>
+            </div>
+          </div>
+          <div class="panel-section">
+            <h3>Planta baixa</h3>
+            <button class="btn full" id="planOpenMap"><svg><use href="#i-upload"/></svg> Carregar imagem</button>
+            <div class="inline-field">
+              <label for="planMapWidth">Largura real</label>
+              <div class="input-suffix"><input id="planMapWidth" type="number" min="1" step="0.5" value="20" /><span>m</span></div>
+            </div>
+            <button class="link-btn" id="planSample">Carregar exemplo</button>
+          </div>
+          <div class="panel-section">
+            <h3>Ferramentas</h3>
+            <div class="tool-grid" id="planTools">
+              <button data-tool="select" class="active" title="Selecionar / mover"><svg><use href="#i-cursor"/></svg><span>Selecionar</span></button>
+              <button data-tool="wall" title="Parede"><svg><use href="#i-wall"/></svg><span>Parede</span></button>
+              <button data-tool="door" title="Porta"><svg><use href="#i-door"/></svg><span>Porta</span></button>
+              <button data-tool="window" title="Janela"><svg><use href="#i-window"/></svg><span>Janela</span></button>
+              <button data-tool="ap" title="Ponto de acesso"><svg><use href="#i-router"/></svg><span>AP</span></button>
+              <button data-tool="pan" title="Mover mapa"><svg><use href="#i-hand"/></svg><span>Mover</span></button>
+            </div>
+            <button class="btn small ghost full" id="planUndo"><svg><use href="#i-undo"/></svg>Desfazer</button>
+            <p class="hint" id="planHint">Arraste para desenhar paredes, portas e janelas. Escolha “AP” e clique para posicionar um roteador.</p>
+          </div>
+          <div class="panel-section grow">
+            <h3>Estrutura <span class="counter" id="planWallCount">0</span></h3>
+            <div class="list compact" id="planObjectList"></div>
+          </div>
+        </aside>
+
+        <div class="map-stage">
+          <canvas id="planCanvas"></canvas>
+          <div class="map-overlay-top">
+            <span class="map-badge" id="planBadgeAps">0 APs</span>
+            <span class="map-badge" id="planBadgeWalls">0 obstáculos</span>
+            <span class="map-badge" id="planBadgeZoom">100%</span>
+          </div>
+          <div class="map-toolbar">
+            <button id="planZoomIn" title="Aproximar"><svg><use href="#i-plus"/></svg></button>
+            <button id="planZoomOut" title="Afastar"><svg><use href="#i-minus"/></svg></button>
+            <button id="planFit" title="Ajustar"><svg><use href="#i-fit"/></svg></button>
+          </div>
+          <div class="map-empty" id="planEmpty">
+            <div class="empty-icon"><svg><use href="#i-plan"/></svg></div>
+            <h3>Desenhe ou carregue uma planta</h3>
+            <p>Adicione paredes, portas e pontos de acesso para simular a cobertura do Wi-Fi antes de instalar.</p>
+            <div class="btn-row"><button class="btn primary" id="planEmptyStart">Começar do zero</button><button class="btn" id="planEmptySample">Ver exemplo</button></div>
+          </div>
+        </div>
+
+        <aside class="side-panel right">
+          <div class="panel-section">
+            <h3>Visualização</h3>
+            <div class="field"><label for="planMetric">Métrica</label><select id="planMetric"><option value="best">Melhor AP</option><option value="ap">RSSI de um AP</option></select></div>
+            <div class="field" id="planApSelectWrap" hidden><label for="planApSelect">AP</label><select id="planApSelect"></select></div>
+            <div class="range-row">
+              <div class="field"><label for="planMin">Mín.</label><input id="planMin" type="number" value="-90" /></div>
+              <div class="field"><label for="planMax">Máx.</label><input id="planMax" type="number" value="-30" /></div>
+            </div>
+            <div class="toggle-list">
+              <label><input type="checkbox" id="planWallsVisible" checked /> Mostrar paredes</label>
+              <label><input type="checkbox" id="planIsolines" /> Isolinhas</label>
+              <label><input type="checkbox" id="planLabels" checked /> Rótulos dos APs</label>
+            </div>
+          </div>
+          <div class="panel-section">
+            <h3>Pontos de acesso</h3>
+            <div id="planApList" class="ap-list"></div>
+            <button class="btn small full" id="planAddAp"><svg><use href="#i-plus"/></svg> Adicionar AP</button>
+          </div>
+          <div class="panel-section" id="planApEditor" hidden>
+            <h3>Editar AP</h3>
+            <div class="field"><label for="planApSsid">SSID</label><input id="planApSsid" class="text-input" /></div>
+            <div class="range-row">
+              <div class="field"><label for="planApBand">Faixa</label><select id="planApBand"><option value="2.4">2,4 GHz</option><option value="5" selected>5 GHz</option><option value="6">6 GHz</option></select></div>
+              <div class="field"><label for="planApChannel">Canal</label><input id="planApChannel" type="number" value="36" /></div>
+            </div>
+            <div class="field"><label for="planApPower">Potência TX <span class="muted" id="planApPowerVal">20 dBm</span></label><input id="planApPower" type="range" min="5" max="30" step="1" value="20" /></div>
+            <button class="btn small danger full" id="planApDelete"><svg><use href="#i-trash"/></svg> Remover AP</button>
+          </div>
+          <div class="panel-section">
+            <h3>Atenuação dos obstáculos</h3>
+            <div class="range-row three">
+              <div class="field"><label for="attWall">Parede</label><input id="attWall" type="number" value="7" step="0.5" /></div>
+              <div class="field"><label for="attDoor">Porta</label><input id="attDoor" type="number" value="2" step="0.5" /></div>
+              <div class="field"><label for="attWindow">Janela</label><input id="attWindow" type="number" value="3" step="0.5" /></div>
+            </div>
+            <p class="hint">Valores em dB por travessia. Paredes de concreto podem exigir 10–15 dB.</p>
+          </div>
+          <div class="panel-section">
+            <h3>Legenda</h3>
+            <div class="legend" id="planLegend">
+              <div class="legend-bar"></div>
+              <div class="legend-labels"><span id="planLegendMin">—</span><span id="planLegendMid">—</span><span id="planLegendMax">—</span></div>
+            </div>
+            <p class="hint" id="planStats">Adicione um AP para simular a cobertura.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <div class="status-left">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Pronto</span>
+      <span class="sep">•</span>
+      <span id="statusSource">—</span>
+      <span class="sep">•</span>
+      <span id="statusInterval">intervalo 5 s</span>
+    </div>
+    <div class="status-right">
+      <span id="statusCount">0 redes</span>
+      <span class="sep">•</span>
+      <span id="statusLast">—</span>
+      <button class="link-btn" id="aboutBtn">Sobre</button>
+    </div>
+  </footer>
+
+  <!-- ================= SETTINGS ================= -->
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-head"><h2>Configurações</h2><button class="btn icon-only" value="cancel"><svg><use href="#i-close"/></svg></button></div>
+      <div class="dialog-section">
+        <h3>Varredura</h3>
+        <div class="field"><label for="setInterval">Intervalo entre varreduras</label>
+          <select id="setInterval"><option value="2">2 segundos</option><option value="5">5 segundos</option><option value="10">10 segundos</option><option value="30">30 segundos</option></select>
+        </div>
+        <label class="check"><input type="checkbox" id="setAutoStart" /> Iniciar varrendo ao abrir</label>
+        <label class="check"><input type="checkbox" id="setDemo" /> Usar dados de demonstração</label>
+      </div>
+      <div class="dialog-section">
+        <h3>Exibição</h3>
+        <div class="field"><label for="setTheme">Tema</label><select id="setTheme"><option value="dark">Escuro</option><option value="light">Claro</option></select></div>
+        <div class="field"><label for="setUnits">Unidades de distância</label><select id="setUnits"><option value="m">Metros</option><option value="ft">Pés</option></select></div>
+        <div class="range-row">
+          <div class="field"><label for="setGood">Sinal bom (dBm)</label><input id="setGood" type="number" value="-67" /></div>
+          <div class="field"><label for="setFair">Sinal regular (dBm)</label><input id="setFair" type="number" value="-75" /></div>
+        </div>
+        <label class="check"><input type="checkbox" id="setHidden" checked /> Mostrar redes ocultas</label>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="settingsApply" value="default">Aplicar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="aboutDialog" class="dialog about">
+    <div class="dialog-body">
+      <div class="dialog-head"><h2>Sobre o NetSpot Clone</h2><button class="btn icon-only" id="aboutClose"><svg><use href="#i-close"/></svg></button></div>
+      <div class="about-hero"><div class="brand-mark large"><svg><use href="#i-radar"/></svg></div><div><strong>NetSpot Clone</strong><span id="aboutVersion">versão 1.0.0</span></div></div>
+      <p>Analisador e planejador de redes Wi-Fi para Windows e Linux, com inspetor em tempo real, levantamento por planta baixa e simulação preditiva de cobertura.</p>
+      <p class="muted small">Reimplementação independente criada a partir de análise de comportamento e engenharia reversa estática do NetSpot 6.0.0.780. Não é afiliada, endossada ou distribuída pela Etwok Inc. “NetSpot” é marca de seu respectivo proprietário. Nenhum código, imagem ou recurso proprietário foi copiado.</p>
+      <dl class="about-grid">
+        <div><dt>Electron</dt><dd id="aboutElectron">—</dd></div>
+        <div><dt>Chromium</dt><dd id="aboutChrome">—</dd></div>
+        <div><dt>Node.js</dt><dd id="aboutNode">—</dd></div>
+        <div><dt>Plataforma</dt><dd id="aboutPlatform">—</dd></div>
+      </dl>
+      <div class="dialog-actions"><button class="btn" id="aboutOk">Fechar</button></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

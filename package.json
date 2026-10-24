@@ -1,0 +1,25 @@
+{
+  "name": "netspot-clone",
+  "productName": "NetSpot Clone",
+  "version": "1.0.0",
+  "description": "Analisador de redes Wi-Fi com inspetor, levantamento e planejamento — reimplementação independente inspirada no NetSpot",
+  "main": "src/main.js",
+  "author": "NetSpot Clone Project",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "demo": "electron . --demo",
+    "smoke": "xvfb-run -a electron . --demo --screenshot=/tmp/netspot-clone.png --screenshot-view=survey",
+    "package:win": "electron-packager . NetSpot --platform=win32 --arch=x64 --icon=assets/icon.ico --out=dist --overwrite --prune=true --app-version=1.0.0 --build-version=1.0.0 --win32metadata.CompanyName=\"NetSpot Clone Project\" --win32metadata.FileDescription=\"NetSpot Clone - Analisador Wi-Fi\" --win32metadata.ProductName=\"NetSpot Clone\" --win32metadata.LegalCopyright=\"MIT License\"",
+    "package:linux": "electron-packager . NetSpot --platform=linux --arch=x64 --icon=assets/icon.png --out=dist --overwrite --prune=true --app-version=1.0.0 --build-version=1.0.0",
+    "package:all": "npm run package:win && npm run package:linux"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.0.0",
+    "png-to-ico": "^3.0.2"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.3"
+  }
+}
