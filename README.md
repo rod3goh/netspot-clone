@@ -48,6 +48,15 @@ Analisador e planejador de redes Wi-Fi para Windows e Linux, com interface em po
 - Adaptador Wi-Fi interno ou USB reconhecido pelo sistema.
 - Para varredura: `nmcli` (NetworkManager) ou `iw`.
 - Para resultados completos com `iw`, execute com privilégios suficientes para acesso ao adaptador (por exemplo, `sudo`); sem isso, o aplicativo usa o `nmcli` como fonte principal.
+- **Execução do binário compilado:** Se encontrar erro de permissão no sandbox (`chrome-sandbox`), execute com a flag `--no-sandbox`:
+  ```bash
+  ./NetSpot --no-sandbox
+  ```
+  Ou configure o sandbox permanentemente:
+  ```bash
+  sudo chown root:root chrome-sandbox
+  sudo chmod 4755 chrome-sandbox
+  ```
 
 ### Windows
 - Windows 10/11 x64.
