@@ -26,7 +26,7 @@ Analisador e planejador de redes Wi-Fi para Windows e Linux, com interface em po
 - Inclusão, seleção e remoção de pontos, com desfazer.
 - Estatísticas: sinal médio, área acima do limite, pontos coletados e interferência.
 - Exportação de CSV, PNG e relatório PDF.
-- Projetos de exemplo prontos para demonstração.
+- Plantas e projetos de exemplo para começar rapidamente.
 
 ### Planejamento (Predictive)
 - Desenho de paredes, portas e janelas diretamente na planta.
@@ -45,7 +45,8 @@ Analisador e planejador de redes Wi-Fi para Windows e Linux, com interface em po
 
 ### Linux
 - Distribuição x86_64 com ambiente gráfico (X11 ou Wayland via XWayland).
-- Para varredura real: `nmcli` (NetworkManager) ou `iw`.
+- Adaptador Wi-Fi interno ou USB reconhecido pelo sistema.
+- Para varredura: `nmcli` (NetworkManager) ou `iw`.
 - Para resultados completos com `iw`, execute com privilégios suficientes para acesso ao adaptador (por exemplo, `sudo`); sem isso, o aplicativo usa o `nmcli` como fonte principal.
 
 ### Windows
@@ -57,11 +58,10 @@ Analisador e planejador de redes Wi-Fi para Windows e Linux, com interface em po
 
 ```bash
 npm install
-npm start          # inicia com a interface normal
-npm run demo       # inicia com dados simulados
+npm start
 ```
 
-O modo demonstração também pode ser aberto pelas telas de exemplo do próprio aplicativo.
+A tela **Inspetor** usa sempre o adaptador Wi-Fi real do computador (placa interna ou adaptador USB). Não há modo de demonstração: se nenhuma rede aparecer, o aplicativo mostra o diagnóstico do adaptador e instruções para corrigir o problema.
 
 ### Teste rápido em ambiente sem display
 
@@ -113,7 +113,6 @@ src/
     wlanapi.js            auxiliar PowerShell/wlanapi.dll
     wlan-helper.ps1       script auxiliar do Windows
     linux.js              varredura via nmcli/iw
-    demo.js               gerador de dados simulados
     util.js               normalização, canais, OUI etc.
   renderer/
     index.html            estrutura da interface

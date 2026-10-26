@@ -4,7 +4,6 @@ const { EventEmitter } = require('events');
 const { normalizeAp, qualityFor, dbmToPercent } = require('./util');
 const { scanWindows, wlanApi } = require('./windows');
 const { scanLinux } = require('./linux');
-const { demoScan } = require('./demo');
 
 const HISTORY_LIMIT = 180;
 const REMOVE_AFTER_MS = 180000;
@@ -18,7 +17,6 @@ class Scanner extends EventEmitter {
     this.timer = null;
     this.running = false;
     this.scanning = false;
-    this.demo = false;
     this.intervalSeconds = Math.max(2, Number(settings.intervalSeconds) || 5);
     this.tick = 0;
     this.lastSnapshot = null;
@@ -27,12 +25,10 @@ class Scanner extends EventEmitter {
     this.scanCount = 0;
   }
 
-  start({ intervalSeconds, demo } = {}) {
+  start({ intervalSeconds } = {}) {
     const nextInterval = Math.max(2, Number(intervalSeconds) || this.intervalSeconds || 5);
-    const nextDemo = demo === undefined ? this.demo : !!demo;
-    const changed = !this.running || nextDemo !== this.demo || nextInterval !== this.intervalSeconds;
+    const changed = !this.running || nextInterval !== this.intervalSeconds;
     this.intervalSeconds = nextInterval;
-    this.demo = nextDemo;
     this.running = true;
     this.clearTimer();
     this.emit('status', this.getState());
@@ -70,10 +66,7 @@ class Scanner extends EventEmitter {
     this.emit('status', this.getState());
     let result;
     try {
-      if (this.demo) {
-        this.tick += 1;
-        result = demoScan(this.tick);
-      } else if (process.platform === 'win32') {
+      if (process.platform === 'win32') {
         result = await scanWindows();
       } else if (process.platform === 'linux') {
         result = await scanLinux();
@@ -86,8 +79,10 @@ class Scanner extends EventEmitter {
       this.lastScanAt = Date.now();
     } catch (err) {
       this.lastError = String(err.message || err);
+      const previous = this.lastSnapshot || this.emptySnapshot();
       const snapshot = {
-        ...(this.lastSnapshot || this.emptySnapshot()),
+        ...previous,
+        adapter: err.adapter || previous.adapter,
         error: this.lastError,
         errorHint: hintFor(this.lastError),
         scanning: false,
@@ -108,7 +103,6 @@ class Scanner extends EventEmitter {
       aps: [],
       history: {},
       adapter: null,
-      demo: this.demo,
       error: null,
       source: null,
       warnings: [],
@@ -122,7 +116,8 @@ class Scanner extends EventEmitter {
     const now = Date.now();
     const seen = new Set();
     const adapter = result.adapter || null;
-    const connectedBssid = adapter && adapter.bssid ? String(adapter.bssid).toLowerCase() : null;
+    const adapterConnected = !!adapter && /connected|conectado/i.test(String(adapter.state || ''));
+    const connectedBssid = adapterConnected && adapter.bssid ? String(adapter.bssid).toLowerCase() : null;
 
     for (const raw of result.aps || []) {
       if (!raw || !raw.bssid) continue;
@@ -175,7 +170,6 @@ class Scanner extends EventEmitter {
       aps,
       history,
       adapter,
-      demo: this.demo,
       source: result.source || null,
       warnings: result.warnings || [],
       error: null,
@@ -192,7 +186,6 @@ class Scanner extends EventEmitter {
     return {
       running: this.running,
       scanning: this.scanning,
-      demo: this.demo,
       intervalSeconds: this.intervalSeconds,
       scanCount: this.scanCount,
       lastScanAt: this.lastScanAt,
@@ -208,6 +201,9 @@ class Scanner extends EventEmitter {
 
 function hintFor(message) {
   const text = String(message || '');
+  if (/rfkill|bloquead[oa] por software|Soft blocked/i.test(text)) {
+    return 'O adaptador Wi-Fi está bloqueado por software. Execute "sudo rfkill unblock wifi" (ou ative o Wi-Fi nas configurações do sistema) e tente novamente.';
+  }
   if (/WLAN AutoConfig|serviço WLAN|wlanapi|WlanOpenHandle/i.test(text)) {
     return 'Abra "Serviços" do Windows, inicie o serviço WLAN AutoConfig e confirme que o adaptador Wi-Fi está habilitado.';
   }

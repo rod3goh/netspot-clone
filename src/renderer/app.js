@@ -11,7 +11,6 @@ const DEFAULTS = {
   goodRssi: -67,
   fairRssi: -75,
   autoStart: true,
-  demo: false,
   showHidden: true,
   lastMode: 'inspector',
 };
@@ -26,6 +25,17 @@ const QUALITY_LABEL = {
 };
 
 const BAND_LABEL = { '2.4': '2,4 GHz', '5': '5 GHz', '6': '6 GHz' };
+const ADAPTER_STATE_LABEL = {
+  connected: 'Conectado',
+  conectado: 'Conectado',
+  disconnected: 'Desconectado',
+  desconectado: 'Desconectado',
+  unavailable: 'Indisponível',
+  unmanaged: 'Não gerenciado',
+  disabled: 'Desativado',
+  desconhecido: 'Desconhecido',
+  unknown: 'Desconhecido',
+};
 const OBSTACLE_LABEL = { wall: 'Parede', door: 'Porta', window: 'Janela' };
 
 const $ = (id) => document.getElementById(id);
@@ -43,7 +53,6 @@ const state = {
   snapshot: null,
   status: null,
   paused: false,
-  demo: false,
   view: 'inspector',
   selectedBssid: null,
   query: '',
@@ -328,7 +337,6 @@ function renderInspector() {
     const snapshot = state.snapshot;
     let message = 'Verifique se o adaptador Wi-Fi está habilitado.';
     if (snapshot?.error) message = snapshot.errorHint || snapshot.error;
-    else if (snapshot?.demo) message = 'O simulador não retornou nenhuma rede.';
     else if ((snapshot?.aps || []).length) message = 'Nenhuma rede corresponde aos filtros atuais.';
     else if (!snapshot) message = 'Aguardando a primeira varredura…';
     $('emptyMessage').textContent = message;
@@ -427,19 +435,20 @@ function updateAdapter() {
   let detail = 'Aguardando varredura';
   let title = '';
 
-  if (snapshot?.demo) {
-    name = 'Simulador';
-    detail = 'Dados de demonstração';
-    title = 'Modo de demonstração: redes geradas localmente';
-  } else if (adapter) {
+  if (adapter) {
     name = adapter.name || adapter.description || 'Adaptador Wi-Fi';
     const parts = [];
     if (adapter.ssid) parts.push(adapter.ssid);
     if (adapter.rssi != null) parts.push(dbm(adapter.rssi));
-    else if (adapter.state) parts.push(adapter.state);
+    else if (adapter.state) parts.push(ADAPTER_STATE_LABEL[adapter.state] || adapter.state);
     if (!parts.length) parts.push('Ativo');
     detail = parts.join(' · ');
-    title = [adapter.name, adapter.description, adapter.mac, adapter.driver].filter(Boolean).join(' · ');
+    title = [
+      adapter.usbId ? `USB ${adapter.usbId}` : null,
+      adapter.ifname,
+      adapter.mac,
+      adapter.driver ? `driver ${adapter.driver}` : null,
+    ].filter(Boolean).join(' · ');
   } else if (snapshot?.error) {
     name = 'Sem adaptador';
     detail = 'Falha na varredura';
@@ -452,7 +461,6 @@ function updateAdapter() {
   $('adapterName').textContent = name;
   $('adapterState').textContent = detail;
   $('adapterChip').title = title || detail;
-  $('demoBadge').hidden = !snapshot?.demo;
 }
 
 function updateChrome() {
@@ -488,7 +496,7 @@ function updateChrome() {
       : scanning
         ? 'Varrendo…'
         : 'Pronto';
-  $('statusSource').textContent = snapshot?.source || (snapshot?.demo ? 'simulador' : '—');
+  $('statusSource').textContent = snapshot?.source || '—';
   $('statusInterval').textContent = `intervalo ${state.settings?.intervalSeconds ?? 5} s`;
   $('statusCount').textContent = `${aps.length} ${aps.length === 1 ? 'rede' : 'redes'}`;
   $('statusLast').textContent = snapshot?.timestamp ? `última ${timeText(snapshot.timestamp)}` : '—';
@@ -502,7 +510,6 @@ function updateChrome() {
 
 function applySnapshot(snapshot) {
   state.snapshot = snapshot;
-  state.demo = !!snapshot.demo;
   for (const ap of snapshot.aps || []) state.apCache.set(ap.bssid, ap);
   if (state.selectedBssid && !state.apCache.has(state.selectedBssid)) state.selectedBssid = null;
 
@@ -566,7 +573,7 @@ function pushSurveyUndo() {
 function addSurveyPoint(world) {
   const networks = captureNetworks();
   if (!networks.length) {
-    toast('Nenhuma rede disponível. Aguarde uma varredura ou ative o modo de demonstração.', 'error');
+    toast('Nenhuma rede disponível. Verifique o adaptador Wi-Fi e aguarde uma varredura.', 'error');
     return;
   }
   pushSurveyUndo();
@@ -1832,7 +1839,6 @@ function fillSettingsForm() {
   const settings = state.settings || DEFAULTS;
   $('setInterval').value = String(settings.intervalSeconds || 5);
   $('setAutoStart').checked = settings.autoStart !== false;
-  $('setDemo').checked = !!(state.snapshot?.demo ?? settings.demo);
   $('setTheme').value = settings.theme === 'light' ? 'light' : 'dark';
   $('setUnits').value = settings.units === 'ft' ? 'ft' : 'm';
   $('setGood').value = String(settings.goodRssi ?? -67);
@@ -1844,7 +1850,6 @@ async function applySettingsFromDialog() {
   const patch = {
     intervalSeconds: Math.max(2, Number($('setInterval').value) || 5),
     autoStart: $('setAutoStart').checked,
-    demo: $('setDemo').checked,
     theme: $('setTheme').value === 'light' ? 'light' : 'dark',
     units: $('setUnits').value === 'ft' ? 'ft' : 'm',
     goodRssi: Number($('setGood').value) || -67,
@@ -1853,7 +1858,6 @@ async function applySettingsFromDialog() {
   };
   try {
     state.settings = { ...(state.settings || DEFAULTS), ...(await window.api.settings.set(patch)) };
-    state.demo = !!state.settings.demo;
     applyTheme();
     surveyMap.setUnits(state.settings.units);
     planMap.setUnits(state.settings.units);
@@ -2365,11 +2369,7 @@ function wireGlobal() {
         await window.api.scan.stop();
         state.paused = true;
       } else {
-        const demo = state.snapshot?.demo ?? state.settings?.demo ?? false;
-        await window.api.scan.start({
-          demo,
-          intervalSeconds: state.settings?.intervalSeconds || 5,
-        });
+        await window.api.scan.start({ intervalSeconds: state.settings?.intervalSeconds || 5 });
         state.paused = false;
       }
       updateChrome();
@@ -2391,16 +2391,6 @@ function wireGlobal() {
     try {
       const result = await window.api.scan.refresh();
       if (result?.error) toast(result.errorHint || result.error, 'error');
-    } catch (error) {
-      toast(String(error.message || error), 'error');
-    }
-  });
-
-  $('emptyDemo').addEventListener('click', async () => {
-    try {
-      state.settings = { ...(state.settings || DEFAULTS), ...(await window.api.settings.set({ demo: true })) };
-      await window.api.scan.start({ demo: true, intervalSeconds: state.settings.intervalSeconds || 5 });
-      toast('Modo de demonstração ativado.');
     } catch (error) {
       toast(String(error.message || error), 'error');
     }
@@ -2504,7 +2494,6 @@ async function init() {
   state.info = await window.api.info().catch(() => ({}));
   const loaded = await window.api.settings.get().catch(() => null);
   state.settings = { ...DEFAULTS, ...(loaded || {}) };
-  state.demo = !!state.settings.demo;
   applyTheme();
   surveyMap.setUnits(state.settings.units);
   planMap.setUnits(state.settings.units);

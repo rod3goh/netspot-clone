@@ -9,7 +9,6 @@ const crypto = require('crypto');
 const { Scanner } = require('./scanner');
 
 const APP_ID = 'netspot-clone';
-const isDemoArg = process.argv.includes('--demo');
 const screenshotArg = process.argv.find((a) => a.startsWith('--screenshot='));
 const screenshotPath = screenshotArg ? screenshotArg.split('=').slice(1).join('=') : null;
 const screenshotViewArg = process.argv.find((a) => a.startsWith('--screenshot-view='));
@@ -32,7 +31,6 @@ const DEFAULT_SETTINGS = {
   goodRssi: -67,
   fairRssi: -75,
   autoStart: true,
-  demo: false,
   showHidden: true,
   lastMode: 'inspector',
 };
@@ -40,7 +38,10 @@ const DEFAULT_SETTINGS = {
 function loadSettings() {
   try {
     const raw = fs.readFileSync(settingsFile(), 'utf8');
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const stored = JSON.parse(raw);
+    // Compatibilidade com versões antigas que guardavam a opção de demonstração.
+    delete stored.demo;
+    return { ...DEFAULT_SETTINGS, ...stored };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -144,23 +145,20 @@ function initIpc() {
     platform: process.platform,
     arch: process.arch,
     startupView,
-    isDemoArg,
     userData: app.getPath('userData'),
   }));
 
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch) => {
     const next = await saveSettings(patch || {});
-    if (patch && (Object.prototype.hasOwnProperty.call(patch, 'intervalSeconds') || Object.prototype.hasOwnProperty.call(patch, 'demo'))) {
-      scanner.start({ intervalSeconds: next.intervalSeconds, demo: next.demo });
+    if (patch && Object.prototype.hasOwnProperty.call(patch, 'intervalSeconds')) {
+      scanner.start({ intervalSeconds: next.intervalSeconds });
     }
     return next;
   });
 
   ipcMain.handle('scan:start', (_e, opts = {}) => {
-    const demo = !!opts.demo;
-    if (opts.demo !== undefined) settings.demo = demo;
-    scanner.start({ intervalSeconds: opts.intervalSeconds || settings.intervalSeconds, demo });
+    scanner.start({ intervalSeconds: opts.intervalSeconds || settings.intervalSeconds });
     return scanner.getState();
   });
 
@@ -299,10 +297,7 @@ if (!gotLock) {
     createWindow();
 
     if (!screenshotPath && settings.autoStart || screenshotPath) {
-      scanner.start({
-        intervalSeconds: settings.intervalSeconds,
-        demo: isDemoArg || settings.demo,
-      });
+      scanner.start({ intervalSeconds: settings.intervalSeconds });
     }
 
     app.on('activate', () => {

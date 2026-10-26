@@ -1,6 +1,8 @@
 'use strict';
 
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const { normalizeText, normalizeSecurity, channelToFreq, freqToChannel, bandForChannel, percentToDbm, dbmToPercent } = require('./util');
 
 function run(file, args, timeout = 30000) {
@@ -217,6 +219,61 @@ function findIwInterfaces(text) {
   return out;
 }
 
+async function enrichAdapter(adapter) {
+  if (!adapter || !adapter.name) return adapter;
+  const ifname = adapter.ifname || adapter.name;
+  const sysfs = path.join('/sys/class/net', ifname, 'device');
+  try {
+    const real = await fs.promises.realpath(sysfs);
+    const usbDir = path.dirname(real);
+    const read = async (file) => {
+      try {
+        return (await fs.promises.readFile(path.join(usbDir, file), 'utf8')).trim() || null;
+      } catch {
+        return null;
+      }
+    };
+    const [idVendor, idProduct, product, manufacturer] = await Promise.all([
+      read('idVendor'), read('idProduct'), read('product'), read('manufacturer'),
+    ]);
+    let driver = null;
+    try {
+      driver = path.basename(await fs.promises.readlink(path.join(sysfs, 'driver')));
+    } catch {}
+    let mac = null;
+    try {
+      mac = (await fs.promises.readFile(path.join('/sys/class/net', ifname, 'address'), 'utf8')).trim() || null;
+    } catch {}
+
+    adapter.ifname = ifname;
+    adapter.vendor = manufacturer;
+    adapter.product = product;
+    adapter.driver = driver;
+    adapter.mac = mac;
+    adapter.usbId = idVendor && idProduct ? `${idVendor}:${idProduct}` : null;
+    if (product) {
+      adapter.description = product;
+      adapter.name = manufacturer && !product.toLowerCase().includes(manufacturer.toLowerCase())
+        ? `${manufacturer} ${product}`
+        : product;
+    }
+  } catch {
+    adapter.ifname = ifname;
+  }
+  return adapter;
+}
+
+async function wifiBlockReason() {
+  try {
+    const text = await run('rfkill', ['list', 'wifi'], 5000);
+    if (/Hard blocked:\s*yes/i.test(text)) return 'hard';
+    if (/Soft blocked:\s*yes/i.test(text)) return 'soft';
+  } catch {
+    // rfkill é opcional; sem ele seguimos com nmcli/iw.
+  }
+  return null;
+}
+
 async function scanLinux() {
   const warnings = [];
   let adapter = null;
@@ -295,18 +352,30 @@ async function scanLinux() {
   }
 
   if (!aps.length) {
+    const blocked = await wifiBlockReason();
+    if (blocked) {
+      const message = blocked === 'hard'
+        ? 'O Wi-Fi está desativado por uma chave física ou botão do notebook. Ative-o e tente novamente.'
+        : 'O adaptador Wi-Fi está bloqueado por software (rfkill). Execute "sudo rfkill unblock wifi" e tente novamente.';
+      const error = new Error(message);
+      error.adapter = adapter;
+      throw error;
+    }
     const detail = warnings.length ? ` (${warnings[warnings.length - 1]})` : '';
-    throw new Error(
-      `Não foi possível escanear redes Wi-Fi no Linux${detail}. Instale o NetworkManager (nmcli) ou execute com permissões para usar o iw.`
+    const error = new Error(
+      `Não foi possível escanear redes Wi-Fi no Linux${detail}. Verifique se o adaptador está conectado e se o NetworkManager (nmcli) está ativo.`
     );
+    error.adapter = adapter;
+    throw error;
   }
 
   if (!adapter) {
     adapter = { name: 'Wi-Fi', description: 'Adaptador Wi-Fi', state: 'connected', ssid: null, bssid: null, channel: null, rssi: null, signalPct: null };
   }
 
-  const active = aps.find((ap) => ap.active) || aps[0];
-  if (!adapter.bssid && active) {
+  const connected = /connected|conectado/i.test(String(adapter.state || ''));
+  const active = connected ? (aps.find((ap) => ap.active) || aps[0]) : null;
+  if (connected && !adapter.bssid && active) {
     adapter.bssid = active.bssid;
     adapter.ssid = active.ssid;
     adapter.channel = active.channel;
@@ -315,6 +384,14 @@ async function scanLinux() {
     if (adapter.state === 'connected' || adapter.state === 'conectado') adapter.state = 'connected';
   }
 
+  if (!connected) {
+    adapter.ssid = null;
+    adapter.bssid = null;
+    adapter.channel = null;
+    adapter.rssi = null;
+    adapter.signalPct = null;
+  }
+  await enrichAdapter(adapter);
   return { aps, adapter, source, warnings };
 }
 
